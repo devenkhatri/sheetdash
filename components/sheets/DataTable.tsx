@@ -8,6 +8,7 @@ import {
   getCoreRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  Row,
   SortingState,
   useReactTable,
 } from '@tanstack/react-table';
@@ -82,7 +83,7 @@ export function DataTable() {
       ...config.columns.map(column => ({
         accessorKey: column.id,
         header: column.header,
-        cell: ({ row }) => {
+        cell: ({ row }: { row: Row<Record<string, unknown>> }) => {
           const value = row.getValue(column.id);
           
           switch (column.type) {
@@ -97,7 +98,7 @@ export function DataTable() {
                 </div>
               );
             case 'date':
-              return value ? new Date(value).toLocaleDateString() : '';
+              return value && (typeof value === 'string' || typeof value === 'number') ? new Date(value).toLocaleDateString() : '';
             default:
               return value;
           }
@@ -106,7 +107,7 @@ export function DataTable() {
       {
         id: 'actions',
         header: 'Actions',
-        cell: ({ row }) => (
+        cell: ({ row }: { row: Row<Record<string, unknown>> }) => (
           <div className="flex justify-center gap-2">
             <Button 
               variant="ghost" 

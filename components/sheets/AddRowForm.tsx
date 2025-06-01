@@ -61,26 +61,29 @@ export function AddRowForm() {
   }
 
   // Dynamically create the form schema based on the column configuration
-  const formSchema = z.object(
-    config.columns.reduce((acc, column) => {
-      let validator;
-      switch (column.type) {
-        case 'number':
-          validator = z.coerce.number();
-          break;
-        case 'boolean':
-          validator = z.boolean();
-          break;
-        case 'date':
-          validator = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { message: 'Please use YYYY-MM-DD format.' });
-          break;
-        default:
-          validator = z.string();
-      }
+  const getValidator = (column: SheetConfig['columns'][number]) => {
+    let validator;
+    if (column.type === 'text') {
+      validator = z.string();
       if (column.required) {
         validator = validator.min(1, { message: `${column.header} is required.` });
       }
-      return { ...acc, [column.id]: validator };
+    } else if (column.type === 'number') {
+      validator = z.coerce.number();
+      if (column.required) {
+        validator = validator.min(1, { message: `${column.header} is required.` });
+      }
+    } else if (column.type === 'boolean') {
+      validator = z.boolean();
+    } else {
+      validator = z.any();
+    }
+    return validator;
+  };
+
+  const formSchema = z.object(
+    config.columns.reduce((acc, column) => {
+      return { ...acc, [column.id]: getValidator(column) };
     }, {})
   );
 
@@ -133,7 +136,7 @@ export function AddRowForm() {
             <FormField
               key={column.id}
               control={form.control}
-              name={column.id}
+              name={column.id as keyof z.infer<typeof formSchema>}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{column.header}</FormLabel>

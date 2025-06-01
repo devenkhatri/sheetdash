@@ -43,7 +43,7 @@ export async function POST(request: Request) {
         spreadsheetId: config.sheetId,
       });
 
-      if (!response.data.sheets?.some(sheet => 
+      if (!response.data.sheets?.some((sheet: { properties?: { title?: string } }) => 
         sheet.properties?.title === config.tabName
       )) {
         return NextResponse.json(
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     });
 
     const headers = headerResponse.data.values?.[0] || [];
-    const columns = headers.map(header => ({
+    const columns = headers.map((header: string) => ({
       id: header.toLowerCase().replace(/\s+/g, '_'),
       header,
       type: 'text',

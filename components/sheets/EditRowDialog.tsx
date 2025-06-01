@@ -40,27 +40,27 @@ export function EditRowDialog({ row, config, open, onSave, onCancel }: EditRowDi
   // Dynamically create the form schema based on the column configuration
   const formSchema = z.object(
     config.columns.reduce((acc, column) => {
-      let validator;
-      switch (column.type) {
-        case 'number':
-          validator = z.coerce.number();
-          break;
-        case 'boolean':
-          validator = z.boolean();
-          break;
-        case 'date':
-          validator = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { message: 'Please use YYYY-MM-DD format.' });
-          break;
-        default:
-          validator = z.string();
-      }
-      if (column.required) {
-        validator = validator.min(1, { message: `${column.header} is required.` });
+      let validator: z.ZodType<any, any, any>;
+      
+      // Initialize validator with a default value
+      validator = z.any();
+
+      if (column.type === 'text') {
+        validator = z.string();
+        if (column.required) {
+          validator = z.string().min(1, { message: `${column.header} is required.` });
+        }
+      } else if (column.type === 'number') {
+        validator = z.coerce.number();
+        if (column.required) {
+          validator = z.coerce.number().min(1, { message: `${column.header} is required.` });
+        }
+      } else if (column.type === 'boolean') { // Assuming boolean type doesn't have min requirement
+        validator = z.boolean();
       }
       return { ...acc, [column.id]: validator };
     }, {})
   );
-
   type FormData = z.infer<typeof formSchema>;
 
   const form = useForm<FormData>({
@@ -97,7 +97,7 @@ export function EditRowDialog({ row, config, open, onSave, onCancel }: EditRowDi
                 <FormField
                   key={column.id}
                   control={form.control}
-                  name={column.id}
+                  name={column.id as keyof FormData}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>{column.header}</FormLabel>
@@ -111,7 +111,7 @@ export function EditRowDialog({ row, config, open, onSave, onCancel }: EditRowDi
                           <Input
                             {...field}
                             type="date"
-                            value={field.value?.split('T')[0] || ''}
+                            value={(field.value as string)?.split('T')[0] || ''}
                           />
                         ) : column.type === 'number' ? (
                           <Input {...field} type="number" />
